@@ -1,9 +1,23 @@
 // nutrisense/js/ai.js
 
+/**
+ * AI Module
+ * Acts as the interfacing layer for Artificial Intelligence queries.
+ * Handles Mock Parsing for Food, and Real API requests for Chat.
+ */
 const AI = {
-    // We would use fetch to an API here. For now, realistic mock parsing.
+    /**
+     * Simulates analyzing a food string via an AI API.
+     * Enforces a structured JSON output with macros and health insights.
+     * @param {string} input - The text description of the meal
+     * @returns {Promise<Object>} The simulated AI response payload
+     */
     async analyzeFood(input) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+            if (!input || typeof input !== 'string') {
+                return reject(new Error("Invalid input provided to AI module"));
+            }
+
             setTimeout(() => {
                 const lowerInput = input.toLowerCase();
                 let mockResult = {
@@ -70,39 +84,47 @@ const AI = {
         });
     },
 
+    /**
+     * Sends a chat prompt to the external Aura AI backend.
+     * Automatically appends user context (macros, goals) via a system prompt.
+     * @param {Object} userProgress - The user's current goals and daily totals
+     * @param {string} message - The user's typed message
+     * @returns {Promise<Object>} The response object containing role and content
+     */
     async chat(userProgress, message) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const lowerMsg = message.toLowerCase();
-                let reply = "";
+        const { totals, user } = userProgress;
+        const calLeft = user.targets.calories - totals.calories;
+        const systemPrompt = `You are NutriSense, a helpful AI nutritionist specializing in Indian food.
+Context: The user's goal is ${user.goalType}. 
+They've consumed ${totals.calories} kcal today. 
+They have ${Math.max(0, calLeft)} kcal remaining to hit their goal. 
+Current macros: ${totals.protein}g protein, ${totals.carbs}g carbs, ${totals.fat}g fat.
+Respond concisely and specifically to this user. Use modern, polite language.`;
 
-                // Context variables
-                const { totals, user } = userProgress;
-                const calLeft = user.targets.calories - totals.calories;
+        const messages = [
+            { role: "user", content: systemPrompt },
+            { role: "assistant", content: "Understood. I will use this context to answer." },
+            { role: "user", content: message }
+        ];
 
-                if (lowerMsg.includes('what should i eat') || lowerMsg.includes('next')) {
-                    if (calLeft > 500 && totals.protein < user.targets.protein * 0.7) {
-                        reply = `You have ${calLeft} kcal left but are low on protein. I suggest a high-protein meal like Palak Paneer with a small portion of rice, or some Grilled Chicken/Soya Chunks.`;
-                    } else if (calLeft > 300) {
-                        reply = `You're tracking well. A small balanced snack like Poha or a bowl of Dal would fit nicely without going over your limits.`;
-                    } else {
-                        reply = `You only have ${Math.max(0, calLeft)} kcal left for today. Stick to something very light, like a cucumber salad or clear soup.`;
-                    }
-                } else if (lowerMsg.includes('balanced') || lowerMsg.includes('how am i doing')) {
-                    if (totals.score >= 80) {
-                        reply = `You're doing great! Your health score is ${totals.score}/100. Your macros are well-distributed. Keep it up!`;
-                    } else {
-                        reply = `Your health score is ${totals.score}/100. Watch out for foods high in fats or simple carbs. Let's aim for more protein with your next meal.`;
-                    }
-                } else if (lowerMsg.includes('high-protein') || lowerMsg.includes('dinner')) {
-                    reply = `For a high-protein Indian dinner, try Egg Bhurji (with 3 egg whites), Low-fat Paneer Tikka, or a hearty bowl of Rajma with a side of greens.`;
-                } else {
-                    reply = `That's interesting! Based on your ${user.goalType.replace('_', ' ')} goal, always remember to prioritize whole foods. I'm here if you need meal suggestions!`;
-                }
-
-                resolve({ role: 'assistant', content: reply });
-            }, 1000);
-        });
+        try {
+            const res = await fetch("https://chatbot-030u.onrender.com/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    messages: messages, 
+                    apiKey: "AIzaSyArTwhwkuqwu4OUSzcvs9OO-4SIlkG_4_A" 
+                }),
+            });
+            
+            if (!res.ok) throw new Error("API response error");
+            const data = await res.json();
+            return { role: 'assistant', content: data.reply || "No response." };
+            
+        } catch (error) {
+            console.error("Aura Chatbot API Error:", error);
+            return { role: 'assistant', content: "Sorry, I am having trouble connecting right now." };
+        }
     }
 };
 

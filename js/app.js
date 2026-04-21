@@ -2,8 +2,15 @@
 
 const App = {
     currentMealResult: null,
+    elements: {}, // Cached DOM references
 
+    /**
+     * Initializes the application.
+     * Caches DOM selectors, checks local storage for user state, and routes to appropriate view.
+     */
     init() {
+        this.cacheDOM();
+
         const user = window.Storage.getUser();
         if (!user || !user.onboarded) {
             this.showView('view-onboarding');
@@ -12,14 +19,51 @@ const App = {
             this.updateDashboard();
         }
 
-        // Set date
+        // Set date on dashboard header
         const options = { weekday: 'short', day: 'numeric', month: 'short' };
-        document.getElementById('dash-date').innerText = new Date().toLocaleDateString('en-US', options);
+        if (this.elements.dashDate) {
+            this.elements.dashDate.innerText = new Date().toLocaleDateString('en-US', options);
+        }
     },
 
+    /**
+     * Caches all frequently accessed DOM elements to improve performance
+     * and reduce redundant DOM queries.
+     */
+    cacheDOM() {
+        this.elements = {
+            views: document.querySelectorAll('.view'),
+            dashDate: document.getElementById('dash-date'),
+            scoreEl: document.getElementById('dash-score'),
+            scoreRing: document.getElementById('score-ring'),
+            calConsumed: document.getElementById('dash-cal-consumed'),
+            calTarget: document.getElementById('dash-cal-target'),
+            calBar: document.getElementById('cal-bar'),
+            protVal: document.getElementById('dash-prot'),
+            carbVal: document.getElementById('dash-carb'),
+            fatVal: document.getElementById('dash-fat'),
+            timeline: document.getElementById('meal-timeline'),
+            insightText: document.getElementById('dash-insight-text'),
+            mealInput: document.getElementById('meal-input'),
+            loggerLoading: document.getElementById('logger-loading'),
+            inputCard: document.querySelector('.input-card'),
+            resultContainer: document.getElementById('result-container'),
+            chatInput: document.getElementById('chat-input'),
+            chatWindow: document.getElementById('chat-window'),
+            errorBanner: null // dynamically created
+        };
+    },
+
+    /**
+     * Handles view switching (routing).
+     * @param {string} viewId - ID of the target view container to show.
+     */
     showView(viewId) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
-        document.getElementById(viewId).classList.add('active-view');
+        this.elements.views.forEach(v => v.classList.remove('active-view'));
+        const target = document.getElementById(viewId);
+        if (target) {
+            target.classList.add('active-view');
+        }
         window.scrollTo(0, 0);
 
         if (viewId === 'view-dashboard') {
@@ -32,51 +76,53 @@ const App = {
         this.showView('view-dashboard');
     },
 
+    /**
+     * Coordinates the refresh of the Dashboard View.
+     * Computes the latest health score, updates all SVG rings and progress bars,
+     * populates the timeline, and auto-generates the 'Next Meal' insight.
+     */
     updateDashboard() {
         const progress = window.Storage.getDailyProgress();
         if (!progress) return;
 
         const { totals, user, meals } = progress;
 
-        // Health Score
-        const scoreEl = document.getElementById('dash-score');
-        const scoreRing = document.getElementById('score-ring');
-        scoreEl.innerText = totals.score;
+        // --- 1. Health Score Render ---
+        this.elements.scoreEl.innerText = totals.score;
 
         let strokeColor = 'var(--color-success)'; // Green
         if (totals.score < 50) strokeColor = 'var(--color-error)'; // Red
         else if (totals.score < 80) strokeColor = 'var(--color-warning)'; // Yellow
 
-        scoreRing.style.stroke = strokeColor;
-        // Dasharray is 283 (2 * pi * r, r=45)
+        this.elements.scoreRing.style.stroke = strokeColor;
+        // SVG circle dashoffset trick based on 283 circumference
         const offset = 283 - (283 * (totals.score / 100));
-        setTimeout(() => { scoreRing.style.strokeDashoffset = offset; }, 100);
+        setTimeout(() => { this.elements.scoreRing.style.strokeDashoffset = offset; }, 100);
 
-        // Calories
-        document.getElementById('dash-cal-consumed').innerText = totals.calories;
-        document.getElementById('dash-cal-target').innerText = `/ ${user.targets.calories} kcal`;
+        // --- 2. Calories Render ---
+        this.elements.calConsumed.innerText = totals.calories;
+        this.elements.calTarget.innerText = `/ ${user.targets.calories} kcal`;
         let calPct = Math.min(100, (totals.calories / user.targets.calories) * 100);
-        document.getElementById('cal-bar').style.width = calPct + '%';
-        if (calPct >= 100) document.getElementById('cal-bar').style.background = 'var(--color-error)';
+        this.elements.calBar.style.width = calPct + '%';
+        if (calPct >= 100) this.elements.calBar.style.background = 'var(--color-error)';
 
-        // Macros
-        document.getElementById('dash-prot').innerText = `${totals.protein}g / ${user.targets.protein}g`;
+        // --- 3. Macros Render ---
+        this.elements.protVal.innerText = `${totals.protein}g / ${user.targets.protein}g`;
         this.setMacroRing('prot-ring', totals.protein, user.targets.protein);
 
-        document.getElementById('dash-carb').innerText = `${totals.carbs}g / ${user.targets.carbs}g`;
+        this.elements.carbVal.innerText = `${totals.carbs}g / ${user.targets.carbs}g`;
         this.setMacroRing('carb-ring', totals.carbs, user.targets.carbs);
 
-        document.getElementById('dash-fat').innerText = `${totals.fat}g / ${user.targets.fat}g`;
+        this.elements.fatVal.innerText = `${totals.fat}g / ${user.targets.fat}g`;
         this.setMacroRing('fat-ring', totals.fat, user.targets.fat);
 
-        // Timeline Update
-        const timeline = document.getElementById('meal-timeline');
-        timeline.innerHTML = '';
+        // --- 4. Timeline Update ---
+        this.elements.timeline.innerHTML = '';
         if (meals.length === 0) {
-            timeline.innerHTML = `<p style="text-align:center; padding: 20px;">No meals logged today.</p>`;
+            this.elements.timeline.innerHTML = `<p style="text-align:center; padding: 20px;">No meals logged today.</p>`;
         } else {
             meals.reverse().forEach(m => {
-                timeline.innerHTML += `
+                this.elements.timeline.innerHTML += `
                     <div class="meal-card">
                         <div class="meal-info">
                             <h4>${m.food_items[0] || 'Meal'} ${m.food_items.length > 1 ? `+${m.food_items.length-1}` : ''}</h4>
@@ -88,15 +134,14 @@ const App = {
             });
         }
         
-        // Update Insight Card safely
-        const insightText = document.getElementById('dash-insight-text');
+        // --- 5. Insight Logic (What should I eat next?) ---
         const calLeft = user.targets.calories - totals.calories;
         if (calLeft < 0) {
-            insightText.innerText = `You are ${Math.abs(calLeft)} kcal over your limit. Stick to water or tea!`;
+            this.elements.insightText.innerText = `You are ${Math.abs(calLeft)} kcal over your limit. Consider resting digestion tracking!`;
         } else if (totals.protein < user.targets.protein * 0.5) {
-            insightText.innerText = "You're running low on protein today. Add some paneer, eggs, or lentils.";
+            this.elements.insightText.innerText = "You're running low on protein today. Add some paneer, eggs, or lentils to your next meal.";
         } else {
-            insightText.innerText = `You have ${calLeft} kcal remaining. Perfect time for a balanced meal.`;
+            this.elements.insightText.innerText = `You have ${calLeft} kcal remaining. Perfect time for a balanced meal to hit your goals.`;
         }
     },
 
@@ -108,29 +153,59 @@ const App = {
         setTimeout(() => { ring.style.strokeDashoffset = 100 - (100 * pct); }, 100);
     },
 
+    /**
+     * Reads user input, calls the AI module for mocked extraction, and handles state.
+     * Incorporates user-friendly non-breaking error handling.
+     */
     async analyzeMeal() {
-        const input = document.getElementById('meal-input').value;
-        if (!input.trim()) return alert("Please enter a meal description.");
+        const input = this.elements.mealInput.value;
+        if (!input.trim()) {
+            this.showError("Please enter a meal description first.");
+            return;
+        }
 
-        document.getElementById('logger-loading').classList.remove('hidden');
-        document.querySelector('.input-card').classList.add('hidden');
+        this.elements.loggerLoading.classList.remove('hidden');
+        this.elements.inputCard.classList.add('hidden');
         
         try {
             const result = await window.AI.analyzeFood(input);
             this.currentMealResult = result;
             this.renderResult(result);
-            document.getElementById('meal-input').value = ""; // clear
+            this.elements.mealInput.value = ""; // clear
             this.showView('view-result');
         } catch (e) {
-            alert('Error analyzing meal');
+            console.error(e);
+            this.showError("We couldn't analyze the meal right now. Please try again.");
         } finally {
-            document.getElementById('logger-loading').classList.add('hidden');
-            document.querySelector('.input-card').classList.remove('hidden');
+            this.elements.loggerLoading.classList.add('hidden');
+            this.elements.inputCard.classList.remove('hidden');
         }
     },
 
+    /**
+     * Non-intrusive lightweight alert overlay to display warnings to the user.
+     * @param {string} message - Error text
+     */
+    showError(message) {
+        if (!this.elements.errorBanner) {
+            const banner = document.createElement('div');
+            banner.style.cssText = "position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--color-error); color: white; padding: 12px 24px; border-radius: 8px; z-index: 1000; transition: opacity 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 500;";
+            document.body.appendChild(banner);
+            this.elements.errorBanner = banner;
+        }
+        this.elements.errorBanner.innerText = message;
+        this.elements.errorBanner.style.opacity = '1';
+        setTimeout(() => {
+            this.elements.errorBanner.style.opacity = '0';
+        }, 3000);
+    },
+
+    /**
+     * Renders the structured mock response payload into the Result UI view.
+     * @param {Object} r - The analyzed meal payload
+     */
     renderResult(r) {
-        const container = document.getElementById('result-container');
+        const container = this.elements.resultContainer;
         let tagsHtml = r.food_items.map(i => `<span class="tag">${i}</span>`).join('');
         
         container.innerHTML = `
@@ -164,8 +239,12 @@ const App = {
         this.showView('view-dashboard');
     },
 
+    /**
+     * Handles the submit action on the AI Coaching chat interface.
+     * Resolves the response and binds it to the list.
+     */
     async sendMessage() {
-        const input = document.getElementById('chat-input');
+        const input = this.elements.chatInput;
         const text = input.value.trim();
         if (!text) return;
 
@@ -179,7 +258,8 @@ const App = {
     },
 
     appendMessage(role, text) {
-        const win = document.getElementById('chat-window');
+        const win = this.elements.chatWindow;
+        if (!win) return;
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${role === 'user' ? 'user-msg' : 'system-msg'}`;
         msgDiv.innerHTML = `<div class="bubble">${text}</div>`;

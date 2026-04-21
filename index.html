@@ -19,7 +19,7 @@
 <body>
 
     <!-- App Container -->
-    <div id="app-container">
+    <main id="app-container" role="main">
 
         <!-- 1. Onboarding View -->
         <div id="view-onboarding" class="view active-view">
@@ -49,23 +49,23 @@
         </div>
 
         <!-- 2. Dashboard View -->
-        <div id="view-dashboard" class="view">
+        <section id="view-dashboard" class="view" aria-label="Dashboard">
             <header class="app-header">
                 <div>
                     <h2>Today's Overview</h2>
                     <p id="dash-date">Mon, 21 Apr</p>
                 </div>
-                <button class="icon-btn" onclick="app.showView('view-chat')">
-                    <i class="ri-robot-2-line"></i>
+                <button class="icon-btn" onclick="app.showView('view-chat')" aria-label="Open Nutrition Coach">
+                    <i class="ri-robot-2-line" aria-hidden="true"></i>
                 </button>
             </header>
 
             <div class="dashboard-scroll region-scroll">
                 <!-- Health Score & Calories -->
                 <div class="primary-stats-grid">
-                    <div class="stat-card circular-card">
+                    <div class="stat-card circular-card" aria-label="Health Score">
                         <div class="circular-progress" id="score-meter">
-                            <svg viewBox="0 0 100 100">
+                            <svg viewBox="0 0 100 100" aria-hidden="true">
                                 <circle class="bg" cx="50" cy="50" r="45"></circle>
                                 <circle class="progress" id="score-ring" cx="50" cy="50" r="45"></circle>
                             </svg>
@@ -136,27 +136,27 @@
             </div>
 
             <!-- Floating Action Button -->
-            <button class="fab" onclick="app.showView('view-logger')">
-                <i class="ri-add-line"></i>
+            <button class="fab" onclick="app.showView('view-logger')" aria-label="Log a new meal">
+                <i class="ri-add-line" aria-hidden="true"></i>
                 <span>Log</span>
             </button>
-        </div>
+        </section>
 
         <!-- 3. Logger View -->
-        <div id="view-logger" class="view">
+        <section id="view-logger" class="view" aria-label="Log Meal">
             <header class="app-header with-back">
-                <button class="back-btn" onclick="app.showView('view-dashboard')"><i class="ri-arrow-left-line"></i></button>
+                <button class="back-btn" onclick="app.showView('view-dashboard')" aria-label="Go Back"><i class="ri-arrow-left-line" aria-hidden="true"></i></button>
                 <h2>Log Meal</h2>
-                <div style="width:24px"></div>
+                <div style="width:24px" aria-hidden="true"></div>
             </header>
 
             <div class="logger-content region-scroll">
                 <div class="input-card">
-                    <label>Describe what you ate or are about to eat:</label>
-                    <textarea id="meal-input" placeholder="e.g. 2 rotis with dal and aloo gobi..."></textarea>
+                    <label for="meal-input">Describe what you ate or are about to eat:</label>
+                    <textarea id="meal-input" placeholder="e.g. 2 rotis with dal and aloo gobi..." aria-label="Meal description input"></textarea>
                     
-                    <div class="image-upload-mock">
-                        <i class="ri-camera-lens-line"></i>
+                    <div class="image-upload-mock" role="button" aria-label="Scan or Upload Image" tabindex="0">
+                        <i class="ri-camera-lens-line" aria-hidden="true"></i>
                         <span>Scan or Upload Image</span>
                     </div>
                 </div>
@@ -168,16 +168,16 @@
             </div>
 
             <div class="bottom-action">
-                <button class="btn-primary" onclick="app.analyzeMeal()">Analyze Meal</button>
+                <button class="btn-primary" onclick="app.analyzeMeal()" aria-label="Analyze entered meal details">Analyze Meal</button>
             </div>
-        </div>
+        </section>
 
         <!-- 4. Result View -->
-        <div id="view-result" class="view">
+        <section id="view-result" class="view" aria-label="Meal Analysis Result">
             <header class="app-header with-back">
-                <button class="back-btn" onclick="app.showView('view-logger')"><i class="ri-arrow-left-line"></i></button>
+                <button class="back-btn" onclick="app.showView('view-logger')" aria-label="Go Back"><i class="ri-arrow-left-line" aria-hidden="true"></i></button>
                 <h2>Analysis Result</h2>
-                <div style="width:24px"></div>
+                <div style="width:24px" aria-hidden="true"></div>
             </header>
             
             <div class="result-content region-scroll">
@@ -186,19 +186,19 @@
             </div>
 
             <div class="bottom-action">
-                <button class="btn-primary" onclick="app.saveMeal()">Save Meal</button>
+                <button class="btn-primary" onclick="app.saveMeal()" aria-label="Save this meal to your daily log">Save Meal</button>
             </div>
-        </div>
+        </section>
 
         <!-- 5. Chat View -->
-        <div id="view-chat" class="view">
+        <section id="view-chat" class="view" aria-label="Nutrition Coach Chat">
             <header class="app-header with-back shadow">
-                <button class="back-btn" onclick="app.showView('view-dashboard')"><i class="ri-arrow-left-line"></i></button>
+                <button class="back-btn" onclick="app.showView('view-dashboard')" aria-label="Go Back"><i class="ri-arrow-left-line" aria-hidden="true"></i></button>
                 <div class="center-title">
-                    <i class="ri-robot-2-line text-teal"></i>
+                    <i class="ri-robot-2-line text-teal" aria-hidden="true"></i>
                     <h2>Nutrition Coach</h2>
                 </div>
-                <div style="width:24px"></div>
+                <div style="width:24px" aria-hidden="true"></div>
             </header>
 
             <div class="chat-messages region-scroll" id="chat-window">
@@ -210,14 +210,14 @@
             </div>
 
             <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Ask about your diet..." onkeypress="app.handleChatKeyPress(event)" />
-                <button class="send-btn" onclick="app.sendMessage()">
-                    <i class="ri-send-plane-fill"></i>
+                <input type="text" id="chat-input" placeholder="Ask about your diet..." aria-label="Message the nutrition coach" onkeypress="app.handleChatKeyPress(event)" />
+                <button class="send-btn" onclick="app.sendMessage()" aria-label="Send message">
+                    <i class="ri-send-plane-fill" aria-hidden="true"></i>
                 </button>
             </div>
-        </div>
+        </section>
 
-    </div>
+    </main>
 
     <!-- Scripts -->
     <script src="js/storage.js"></script>
