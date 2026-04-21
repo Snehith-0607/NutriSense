@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NutriSense - AI Food & Health Companion</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- App Container -->
+    <div id="app-container">
+
+        <!-- 1. Onboarding View -->
+        <div id="view-onboarding" class="view active-view">
+            <div class="onboarding-content">
+                <div class="icon-header">
+                    <i class="ri-leaf-fill"></i>
+                </div>
+                <h1>Welcome to NutriSense</h1>
+                <p>Your intelligent companion for a healthier lifestyle.</p>
+                
+                <div class="goal-selection">
+                    <h3>What is your primary goal?</h3>
+                    <button class="goal-card" onclick="app.selectGoal('weight_loss')">
+                        <i class="ri-fire-line"></i>
+                        <span>Weight Loss</span>
+                    </button>
+                    <button class="goal-card" onclick="app.selectGoal('muscle_gain')">
+                        <i class="ri-arm-c-line"></i>
+                        <span>Muscle Gain</span>
+                    </button>
+                    <button class="goal-card" onclick="app.selectGoal('balanced')">
+                        <i class="ri-scales-3-line"></i>
+                        <span>Balanced Diet</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Dashboard View -->
+        <div id="view-dashboard" class="view">
+            <header class="app-header">
+                <div>
+                    <h2>Today's Overview</h2>
+                    <p id="dash-date">Mon, 21 Apr</p>
+                </div>
+                <button class="icon-btn" onclick="app.showView('view-chat')">
+                    <i class="ri-robot-2-line"></i>
+                </button>
+            </header>
+
+            <div class="dashboard-scroll region-scroll">
+                <!-- Health Score & Calories -->
+                <div class="primary-stats-grid">
+                    <div class="stat-card circular-card">
+                        <div class="circular-progress" id="score-meter">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="bg" cx="50" cy="50" r="45"></circle>
+                                <circle class="progress" id="score-ring" cx="50" cy="50" r="45"></circle>
+                            </svg>
+                            <div class="inner-text">
+                                <span class="value" id="dash-score">100</span>
+                                <span class="label">Score</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card flex-col center items-start">
+                        <div class="metric">
+                            <i class="ri-fire-fill text-orange"></i>
+                            <span class="label">Calories</span>
+                        </div>
+                        <div class="numbers">
+                            <strong id="dash-cal-consumed">0</strong> <span id="dash-cal-target">/ 2000</span>
+                        </div>
+                        <div class="linear-progress">
+                            <div class="bar" id="cal-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Macros -->
+                <div class="macros-container">
+                    <div class="macro-col">
+                        <span class="m-label">Protein</span>
+                        <div class="m-ring">
+                            <svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="16"></circle><circle class="prog p-blue" id="prot-ring" cx="18" cy="18" r="16"></circle></svg>
+                        </div>
+                        <span class="m-val" id="dash-prot">0g</span>
+                    </div>
+                    <div class="macro-col">
+                        <span class="m-label">Carbs</span>
+                        <div class="m-ring">
+                            <svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="16"></circle><circle class="prog p-yellow" id="carb-ring" cx="18" cy="18" r="16"></circle></svg>
+                        </div>
+                        <span class="m-val" id="dash-carb">0g</span>
+                    </div>
+                    <div class="macro-col">
+                        <span class="m-label">Fat</span>
+                        <div class="m-ring">
+                            <svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="16"></circle><circle class="prog p-red" id="fat-ring" cx="18" cy="18" r="16"></circle></svg>
+                        </div>
+                        <span class="m-val" id="dash-fat">0g</span>
+                    </div>
+                </div>
+
+                <!-- AI Insights / Recommendation -->
+                <div class="ai-insight-card" id="dash-insight" onclick="app.showView('view-chat')">
+                    <div class="ai-icon">
+                        <i class="ri-sparkling-fill"></i>
+                    </div>
+                    <div class="ai-content">
+                        <h4>What should I eat next?</h4>
+                        <p id="dash-insight-text">Analyzing your daily intake...</p>
+                    </div>
+                    <i class="ri-arrow-right-s-line"></i>
+                </div>
+
+                <!-- Timeline -->
+                <div class="timeline-section">
+                    <h3>Today's Meals</h3>
+                    <div id="meal-timeline" class="meal-list">
+                        <!-- Meal cards populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Action Button -->
+            <button class="fab" onclick="app.showView('view-logger')">
+                <i class="ri-add-line"></i>
+                <span>Log</span>
+            </button>
+        </div>
+
+        <!-- 3. Logger View -->
+        <div id="view-logger" class="view">
+            <header class="app-header with-back">
+                <button class="back-btn" onclick="app.showView('view-dashboard')"><i class="ri-arrow-left-line"></i></button>
+                <h2>Log Meal</h2>
+                <div style="width:24px"></div>
+            </header>
+
+            <div class="logger-content region-scroll">
+                <div class="input-card">
+                    <label>Describe what you ate or are about to eat:</label>
+                    <textarea id="meal-input" placeholder="e.g. 2 rotis with dal and aloo gobi..."></textarea>
+                    
+                    <div class="image-upload-mock">
+                        <i class="ri-camera-lens-line"></i>
+                        <span>Scan or Upload Image</span>
+                    </div>
+                </div>
+
+                <div class="loading-state hidden" id="logger-loading">
+                    <div class="spinner"></div>
+                    <p>AI is analyzing your meal...</p>
+                </div>
+            </div>
+
+            <div class="bottom-action">
+                <button class="btn-primary" onclick="app.analyzeMeal()">Analyze Meal</button>
+            </div>
+        </div>
+
+        <!-- 4. Result View -->
+        <div id="view-result" class="view">
+            <header class="app-header with-back">
+                <button class="back-btn" onclick="app.showView('view-logger')"><i class="ri-arrow-left-line"></i></button>
+                <h2>Analysis Result</h2>
+                <div style="width:24px"></div>
+            </header>
+            
+            <div class="result-content region-scroll">
+                <!-- Result populated dynamically via app.js -->
+                <div id="result-container"></div>
+            </div>
+
+            <div class="bottom-action">
+                <button class="btn-primary" onclick="app.saveMeal()">Save Meal</button>
+            </div>
+        </div>
+
+        <!-- 5. Chat View -->
+        <div id="view-chat" class="view">
+            <header class="app-header with-back shadow">
+                <button class="back-btn" onclick="app.showView('view-dashboard')"><i class="ri-arrow-left-line"></i></button>
+                <div class="center-title">
+                    <i class="ri-robot-2-line text-teal"></i>
+                    <h2>Nutrition Coach</h2>
+                </div>
+                <div style="width:24px"></div>
+            </header>
+
+            <div class="chat-messages region-scroll" id="chat-window">
+                <div class="message system-msg">
+                    <div class="bubble">
+                        Hi! I'm your NutriSense AI Coach. How can I help you optimize your diet today?
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask about your diet..." onkeypress="app.handleChatKeyPress(event)" />
+                <button class="send-btn" onclick="app.sendMessage()">
+                    <i class="ri-send-plane-fill"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
